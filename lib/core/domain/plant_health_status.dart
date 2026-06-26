@@ -8,26 +8,28 @@ enum PlantHealthStatus {
   tempTooLow,
   unknown;
 
-  // Priority: overwatered > dry > heat > cold > healthy
-  static PlantHealthStatus compute({
+  static List<PlantHealthStatus> compute({
     required PlantType? plantType,
     required double? humidity,
     required double? temperature,
   }) {
-    if (plantType == null) return unknown;
+    if (plantType == null) return const [];
+
+    final statuses = <PlantHealthStatus>[];
 
     if (humidity != null && humidity > plantType.humidityOverwatered) {
-      return overwatered;
+      statuses.add(overwatered);
     }
     if (humidity != null && humidity < plantType.humidityDry) {
-      return needsWatering;
+      statuses.add(needsWatering);
     }
     if (temperature != null && temperature > plantType.tempCriticalHigh) {
-      return tempTooHigh;
+      statuses.add(tempTooHigh);
     }
     if (temperature != null && temperature < plantType.tempCriticalLow) {
-      return tempTooLow;
+      statuses.add(tempTooLow);
     }
-    return healthy;
+
+    return statuses.isEmpty ? const [healthy] : statuses;
   }
 }

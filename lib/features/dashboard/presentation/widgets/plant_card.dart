@@ -16,7 +16,7 @@ class PlantCard extends ConsumerWidget {
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final plantType = ref.watch(plantTypeProvider(plant.macAddress));
-    final healthStatus = PlantHealthStatus.compute(
+    final healthStatuses = PlantHealthStatus.compute(
       plantType: plantType,
       humidity: plant.humidity,
       temperature: plant.temperature,
@@ -45,10 +45,10 @@ class PlantCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  if (healthStatus != PlantHealthStatus.unknown) ...[
-                    const SizedBox(width: 6),
-                    _HealthBadge(status: healthStatus),
-                  ],
+                  ...healthStatuses.map((s) => Padding(
+                        padding: const EdgeInsets.only(left: 4),
+                        child: _HealthBadge(status: s),
+                      )),
                 ],
               ),
               const Spacer(),
