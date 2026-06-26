@@ -91,7 +91,7 @@ Color _healthColor(PlantHealthStatus status) => switch (status) {
       PlantHealthStatus.needsWatering => const Color(0xFFE65100),
       PlantHealthStatus.tempTooHigh => const Color(0xFFB71C1C),
       PlantHealthStatus.tempTooLow => const Color(0xFF283593),
-      PlantHealthStatus.unknown => AppColors.green,
+      PlantHealthStatus.unknown => AppColors.error
     };
 
 class _HealthBadge extends StatelessWidget {
