@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
+import '../../../../core/domain/plant_type.dart';
 import '../../../../core/theme/app_colors.dart';
 import '../../../dashboard/presentation/providers/plants_provider.dart';
 import '../../domain/entities/plant_reading.dart';
@@ -75,7 +76,8 @@ class PlantDetailScreen extends ConsumerWidget {
       body: readingsAsync.when(
         loading: () => const Center(child: CircularProgressIndicator()),
         error: (error, _) => _ErrorView(message: error.toString()),
-        data: (readings) => _ReadingsContent(readings: readings),
+        data: (readings) =>
+            _ReadingsContent(readings: readings, macAddress: macAddress),
       ),
     );
   }
@@ -118,7 +120,9 @@ class PlantDetailScreen extends ConsumerWidget {
           ),
           TextButton(
             onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save', style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w700)),
+            child: const Text('Save',
+                style: TextStyle(
+                    color: AppColors.green, fontWeight: FontWeight.w700)),
           ),
         ],
       ),
@@ -130,10 +134,102 @@ class PlantDetailScreen extends ConsumerWidget {
   }
 }
 
+// ── Plant type selector ───────────────────────────────────────────────────────
+
+class _PlantTypeSection extends ConsumerWidget {
+  final String macAddress;
+
+  const _PlantTypeSection({required this.macAddress});
+
+  @override
+  Widget build(BuildContext context, WidgetRef ref) {
+    final selectedType = ref.watch(plantTypeProvider(macAddress));
+
+    return Container(
+      margin: const EdgeInsets.only(bottom: 24),
+      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      decoration: BoxDecoration(
+        color: AppColors.creamDark,
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            children: [
+              const Icon(Icons.local_florist_outlined,
+                  size: 16, color: AppColors.greenDark),
+              const SizedBox(width: 6),
+              Text(
+                'Plant Type',
+                style: Theme.of(context).textTheme.labelLarge?.copyWith(
+                      color: AppColors.greenDark,
+                      fontWeight: FontWeight.w700,
+                    ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 8),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 12),
+            decoration: BoxDecoration(
+              color: AppColors.cream,
+              borderRadius: BorderRadius.circular(8),
+            ),
+            child: DropdownButton<PlantType?>(
+              value: selectedType,
+              isExpanded: true,
+              underline: const SizedBox.shrink(),
+              dropdownColor: AppColors.cream,
+              style: Theme.of(context)
+                  .textTheme
+                  .bodyMedium
+                  ?.copyWith(color: AppColors.greenDark),
+              items: [
+                const DropdownMenuItem<PlantType?>(
+                  value: null,
+                  child: Text(
+                    '— Not configured —',
+                    style: TextStyle(
+                        color: Color(0xFF888888), fontStyle: FontStyle.italic),
+                  ),
+                ),
+                ...PlantType.values.map(
+                  (t) => DropdownMenuItem<PlantType?>(
+                    value: t,
+                    child: Text(t.displayName),
+                  ),
+                ),
+              ],
+              onChanged: (type) =>
+                  ref.read(plantTypeProvider(macAddress).notifier).setType(type),
+            ),
+          ),
+          if (selectedType != null) ...[
+            const SizedBox(height: 10),
+            Text(
+              'Ideal: ${selectedType.tempIdealMin.toStringAsFixed(0)}–'
+              '${selectedType.tempIdealMax.toStringAsFixed(0)} °C  ·  '
+              '${selectedType.humidityIdealMin.toStringAsFixed(0)}–'
+              '${selectedType.humidityIdealMax.toStringAsFixed(0)} % humidity',
+              style: Theme.of(context).textTheme.bodySmall?.copyWith(
+                    color: AppColors.onSurface.withValues(alpha: 0.55),
+                  ),
+            ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+// ── Readings content ──────────────────────────────────────────────────────────
+
 class _ReadingsContent extends StatelessWidget {
   final List<PlantReading> readings;
+  final String macAddress;
 
-  const _ReadingsContent({required this.readings});
+  const _ReadingsContent({required this.readings, required this.macAddress});
 
   @override
   Widget build(BuildContext context) {
@@ -156,7 +252,8 @@ class _ReadingsContent extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           _StatRow(readings: readings),
-          const SizedBox(height: 24),
+          const SizedBox(height: 16),
+          _PlantTypeSection(macAddress: macAddress),
           _ChartSection(
             title: 'Temperature',
             unit: '°C',
