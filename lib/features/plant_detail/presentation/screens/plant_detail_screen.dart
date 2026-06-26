@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 
 import '../../../../core/theme/app_colors.dart';
+import '../../../dashboard/presentation/providers/plants_provider.dart';
 import '../../domain/entities/plant_reading.dart';
 import '../providers/plant_readings_provider.dart';
 import '../widgets/sensor_chart.dart';
@@ -11,12 +12,14 @@ class PlantDetailScreen extends ConsumerWidget {
 
   const PlantDetailScreen({super.key, required this.macAddress});
 
-  String get _displayName =>
-      'Plant ${macAddress.substring(macAddress.length - 4)}';
-
   @override
   Widget build(BuildContext context, WidgetRef ref) {
     final readingsAsync = ref.watch(plantReadingsProvider(macAddress));
+    final plant = ref
+        .watch(plantsProvider)
+        .valueOrNull
+        ?.where((p) => p.macAddress == macAddress)
+        .firstOrNull;
 
     return Scaffold(
       appBar: AppBar(
@@ -29,7 +32,7 @@ class PlantDetailScreen extends ConsumerWidget {
                 const Icon(Icons.eco, color: AppColors.green, size: 18),
                 const SizedBox(width: 6),
                 Text(
-                  _displayName,
+                  plant?.displayName ?? macAddress,
                   style: const TextStyle(
                     fontWeight: FontWeight.w700,
                     color: AppColors.greenDark,
@@ -47,6 +50,11 @@ class PlantDetailScreen extends ConsumerWidget {
           ],
         ),
         actions: [
+          IconButton(
+            icon: const Icon(Icons.edit_outlined),
+            tooltip: 'Rename',
+            onPressed: () => _showRenameDialog(context, ref, plant?.name ?? ''),
+          ),
           if (readingsAsync.isLoading)
             const Padding(
               padding: EdgeInsets.only(right: 16),
@@ -70,6 +78,55 @@ class PlantDetailScreen extends ConsumerWidget {
         data: (readings) => _ReadingsContent(readings: readings),
       ),
     );
+  }
+
+  Future<void> _showRenameDialog(
+    BuildContext context,
+    WidgetRef ref,
+    String currentName,
+  ) async {
+    final controller = TextEditingController(text: currentName);
+
+    final result = await showDialog<String>(
+      context: context,
+      builder: (ctx) => AlertDialog(
+        backgroundColor: AppColors.cream,
+        title: const Text(
+          'Rename plant',
+          style: TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.w700),
+        ),
+        content: TextField(
+          controller: controller,
+          autofocus: true,
+          maxLength: 32,
+          decoration: const InputDecoration(
+            hintText: 'e.g. Living Room',
+            counterText: '',
+            enabledBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.green),
+            ),
+            focusedBorder: UnderlineInputBorder(
+              borderSide: BorderSide(color: AppColors.greenDark, width: 2),
+            ),
+          ),
+          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(ctx),
+            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurface)),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
+            child: const Text('Save', style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w700)),
+          ),
+        ],
+      ),
+    );
+
+    if (result == null || !context.mounted) return;
+    await ref.read(plantRepositoryProvider).savePlantName(macAddress, result);
+    ref.invalidate(plantsProvider);
   }
 }
 

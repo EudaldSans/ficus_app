@@ -9,4 +9,8 @@ class PlantRepositoryImpl implements IPlantRepository {
 
   @override
   Future<List<PlantSummary>> fetchPlants() => _datasource.fetchPlants();
+
+  @override
+  Future<void> savePlantName(String macAddress, String name) =>
+      _datasource.savePlantName(macAddress, name);
 }

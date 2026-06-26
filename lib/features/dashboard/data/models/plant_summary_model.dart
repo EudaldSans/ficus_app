@@ -3,6 +3,7 @@ import '../../domain/entities/plant_summary.dart';
 class PlantSummaryModel extends PlantSummary {
   const PlantSummaryModel({
     required super.macAddress,
+    super.name,
     super.temperature,
     super.humidity,
     super.lastUpdated,
@@ -10,25 +11,31 @@ class PlantSummaryModel extends PlantSummary {
 
   factory PlantSummaryModel.fromFirebase(
     String macAddress,
-    Map<dynamic, dynamic> readingsMap,
+    Map<String, dynamic> data,
   ) {
-    final entries = readingsMap.entries
-        .map((e) => MapEntry(int.tryParse(e.key.toString()) ?? 0, e.value))
-        .where((e) => e.key > 0)
+    final name = data['name'] as String?;
+
+    // Only treat numeric keys as timestamp entries
+    final entries = data.entries
+        .where((e) => int.tryParse(e.key) != null)
+        .map((e) => MapEntry(int.parse(e.key), e.value))
         .toList()
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (entries.isEmpty) {
-      return PlantSummaryModel(macAddress: macAddress);
+      return PlantSummaryModel(macAddress: macAddress, name: name);
     }
 
     final latest = entries.last;
-    final data = Map<dynamic, dynamic>.from(latest.value as Map? ?? {});
+    final reading = Map<String, dynamic>.fromEntries(
+      (latest.value as Map).entries.map((e) => MapEntry(e.key.toString(), e.value)),
+    );
 
     return PlantSummaryModel(
       macAddress: macAddress,
-      temperature: (data['temperature'] as num?)?.toDouble(),
-      humidity: (data['humidity'] as num?)?.toDouble(),
+      name: name,
+      temperature: (reading['temperature'] as num?)?.toDouble(),
+      humidity: (reading['humidity'] as num?)?.toDouble(),
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(latest.key * 1000),
     );
   }

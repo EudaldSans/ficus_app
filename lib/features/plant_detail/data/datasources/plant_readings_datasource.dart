@@ -13,6 +13,7 @@ class PlantReadingsDatasource {
 
     final map = _toStringMap(raw as Map);
     return map.entries
+        .where((e) => int.tryParse(e.key) != null) // skip non-timestamp keys like 'name'
         .map((e) => PlantReadingModel.fromFirebase(e.key, _toStringMap(e.value as Map)))
         .toList()
       ..sort((a, b) => a.timestamp.compareTo(b.timestamp));

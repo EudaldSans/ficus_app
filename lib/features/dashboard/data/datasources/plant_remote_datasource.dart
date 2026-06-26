@@ -17,6 +17,11 @@ class PlantRemoteDatasource {
         .toList();
   }
 
+  Future<void> savePlantName(String macAddress, String name) {
+    final ref = _database.ref('plant_data/$macAddress/name');
+    return name.isEmpty ? ref.remove() : ref.set(name);
+  }
+
   static Map<String, dynamic> _toStringMap(Map source) =>
       Map.fromEntries(source.entries.map((e) => MapEntry(e.key.toString(), e.value)));
 }
