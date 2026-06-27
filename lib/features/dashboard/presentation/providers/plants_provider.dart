@@ -31,8 +31,15 @@ final watchPlantsUseCaseProvider = Provider<WatchPlantsUseCase>((ref) {
   return WatchPlantsUseCase(ref.watch(plantRepositoryProvider));
 });
 
-final plantsProvider = FutureProvider<List<PlantSummary>>((ref) {
-  return ref.watch(watchPlantsUseCaseProvider)();
+final plantsProvider = StreamProvider<List<PlantSummary>>((ref) async* {
+  final useCase = ref.watch(watchPlantsUseCaseProvider);
+  while (true) {
+    yield await useCase();
+    final now = DateTime.now();
+    var next = DateTime(now.year, now.month, now.day, now.hour, 1);
+    if (!next.isAfter(now)) next = next.add(const Duration(hours: 1));
+    await Future.delayed(next.difference(now));
+  }
 });
 
 // ── Plant type (local, per-device) ───────────────────────────────────────────

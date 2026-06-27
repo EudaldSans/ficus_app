@@ -24,6 +24,13 @@ final watchPlantReadingsUseCaseProvider =
 });
 
 final plantReadingsProvider =
-    FutureProvider.family<List<PlantReading>, String>((ref, macAddress) {
-  return ref.watch(watchPlantReadingsUseCaseProvider)(macAddress);
+    StreamProvider.family<List<PlantReading>, String>((ref, macAddress) async* {
+  final useCase = ref.watch(watchPlantReadingsUseCaseProvider);
+  while (true) {
+    yield await useCase(macAddress);
+    final now = DateTime.now();
+    var next = DateTime(now.year, now.month, now.day, now.hour, 1);
+    if (!next.isAfter(now)) next = next.add(const Duration(hours: 1));
+    await Future.delayed(next.difference(now));
+  }
 });
