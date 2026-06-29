@@ -45,12 +45,18 @@ class PlantCard extends ConsumerWidget {
                       overflow: TextOverflow.ellipsis,
                     ),
                   ),
-                  ...healthStatuses.map((s) => Padding(
-                        padding: const EdgeInsets.only(left: 4),
-                        child: _HealthBadge(status: s),
-                      )),
                 ],
               ),
+              if (healthStatuses.isNotEmpty) ...[
+                const SizedBox(height: 6),
+                Wrap(
+                  spacing: 4,
+                  runSpacing: 4,
+                  children: healthStatuses
+                      .map((s) => _HealthBadge(status: s))
+                      .toList(),
+                ),
+              ],
               const Spacer(),
               _ReadingRow(
                 icon: Icons.thermostat_outlined,
@@ -111,23 +117,36 @@ class _HealthBadge extends StatelessWidget {
       PlantHealthStatus.unknown => Icons.help_outline,
     };
 
-    return Tooltip(
-      message: switch (status) {
-        PlantHealthStatus.healthy => 'Healthy',
-        PlantHealthStatus.overwatered => 'Overwatered',
-        PlantHealthStatus.needsWatering => 'Needs water',
-        PlantHealthStatus.tempTooHigh => 'Too hot',
-        PlantHealthStatus.tempTooLow => 'Too cold',
-        PlantHealthStatus.unknown => '',
-      },
-      child: Container(
-        padding: const EdgeInsets.all(4),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.12),
-          borderRadius: BorderRadius.circular(6),
-          border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
-        ),
-        child: Icon(icon, size: 14, color: color),
+    final label = switch (status) {
+      PlantHealthStatus.healthy => 'Healthy',
+      PlantHealthStatus.overwatered => 'Overwatered',
+      PlantHealthStatus.needsWatering => 'Needs water',
+      PlantHealthStatus.tempTooHigh => 'Too hot',
+      PlantHealthStatus.tempTooLow => 'Too cold',
+      PlantHealthStatus.unknown => 'Unknown',
+    };
+
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 4),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.12),
+        borderRadius: BorderRadius.circular(6),
+        border: Border.all(color: color.withValues(alpha: 0.35), width: 1),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 12, color: color),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 11,
+              fontWeight: FontWeight.w600,
+              color: color,
+            ),
+          ),
+        ],
       ),
     );
   }
