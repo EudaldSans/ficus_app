@@ -7,7 +7,7 @@ class PlantReadingsDatasource {
   PlantReadingsDatasource(this._database);
 
   Future<List<PlantReadingModel>> fetchPlantReadings(String macAddress) async {
-    final snapshot = await _database.ref('plant_data/$macAddress').get();
+    final snapshot = await _database.ref('plants/$macAddress').get();
     final raw = snapshot.value;
     if (raw == null) return [];
 

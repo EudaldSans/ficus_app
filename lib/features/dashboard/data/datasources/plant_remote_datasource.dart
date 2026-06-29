@@ -7,7 +7,7 @@ class PlantRemoteDatasource {
   PlantRemoteDatasource(this._database);
 
   Future<List<PlantSummaryModel>> fetchPlants() async {
-    final snapshot = await _database.ref('plant_data').get();
+    final snapshot = await _database.ref('plants').get();
     final raw = snapshot.value;
     if (raw == null) return [];
 
@@ -18,7 +18,7 @@ class PlantRemoteDatasource {
   }
 
   Future<void> savePlantName(String macAddress, String name) {
-    final ref = _database.ref('plant_data/$macAddress/name');
+    final ref = _database.ref('plants/$macAddress/name');
     return name.isEmpty ? ref.remove() : ref.set(name);
   }
 
