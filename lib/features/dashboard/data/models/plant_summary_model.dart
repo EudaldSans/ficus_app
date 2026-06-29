@@ -13,9 +13,6 @@ class PlantSummaryModel extends PlantSummary {
     String macAddress,
     Map<String, dynamic> data,
   ) {
-    final name = data['name'] as String?;
-
-    // Only treat numeric keys as timestamp entries
     final entries = data.entries
         .where((e) => int.tryParse(e.key) != null)
         .map((e) => MapEntry(int.parse(e.key), e.value))
@@ -23,7 +20,7 @@ class PlantSummaryModel extends PlantSummary {
       ..sort((a, b) => a.key.compareTo(b.key));
 
     if (entries.isEmpty) {
-      return PlantSummaryModel(macAddress: macAddress, name: name);
+      return PlantSummaryModel(macAddress: macAddress);
     }
 
     final latest = entries.last;
@@ -33,7 +30,6 @@ class PlantSummaryModel extends PlantSummary {
 
     return PlantSummaryModel(
       macAddress: macAddress,
-      name: name,
       temperature: (reading['t'] as num?)?.toDouble(),
       soilMoisture: (reading['sm'] as num?)?.toDouble(),
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(latest.key * 1000),

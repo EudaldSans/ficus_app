@@ -1,30 +1,28 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_database/firebase_database.dart';
 import 'package:flutter_riverpod/flutter_riverpod.dart';
-import 'package:shared_preferences/shared_preferences.dart';
 
 import '../../../../core/domain/plant_type.dart';
-import '../../data/datasources/plant_local_datasource.dart';
+import '../../data/datasources/plant_firestore_datasource.dart';
 import '../../data/datasources/plant_remote_datasource.dart';
 import '../../data/repositories/plant_repository_impl.dart';
 import '../../domain/entities/plant_summary.dart';
 import '../../domain/repositories/i_plant_repository.dart';
 import '../../domain/usecases/watch_plants_usecase.dart';
 
-// Overridden in main.dart after SharedPreferences.getInstance()
-final sharedPreferencesProvider = Provider<SharedPreferences>((ref) {
-  throw UnimplementedError('sharedPreferencesProvider must be overridden in main.dart');
-});
-
-final plantLocalDatasourceProvider = Provider<PlantLocalDatasource>((ref) {
-  return PlantLocalDatasource(ref.watch(sharedPreferencesProvider));
-});
-
 final plantRemoteDatasourceProvider = Provider<PlantRemoteDatasource>((ref) {
   return PlantRemoteDatasource(FirebaseDatabase.instance);
 });
 
+final plantFirestoreDatasourceProvider = Provider<PlantFirestoreDatasource>((ref) {
+  return PlantFirestoreDatasource(FirebaseFirestore.instance);
+});
+
 final plantRepositoryProvider = Provider<IPlantRepository>((ref) {
-  return PlantRepositoryImpl(ref.watch(plantRemoteDatasourceProvider));
+  return PlantRepositoryImpl(
+    ref.watch(plantRemoteDatasourceProvider),
+    ref.watch(plantFirestoreDatasourceProvider),
+  );
 });
 
 final watchPlantsUseCaseProvider = Provider<WatchPlantsUseCase>((ref) {
@@ -42,22 +40,28 @@ final plantsProvider = StreamProvider<List<PlantSummary>>((ref) async* {
   }
 });
 
-// ── Plant type (local, per-device) ───────────────────────────────────────────
+// ── Plant type (Firestore, synced across devices) ─────────────────────────────
 
 class PlantTypeNotifier extends StateNotifier<PlantType?> {
-  final PlantLocalDatasource _local;
+  final IPlantRepository _repo;
   final String _mac;
 
-  PlantTypeNotifier(this._local, this._mac)
-      : super(PlantType.fromKey(_local.getPlantType(_mac)));
+  PlantTypeNotifier(this._repo, this._mac) : super(null) {
+    _load();
+  }
+
+  Future<void> _load() async {
+    final typeKey = await _repo.getPlantType(_mac);
+    if (mounted) state = PlantType.fromKey(typeKey);
+  }
 
   Future<void> setType(PlantType? type) async {
-    await _local.savePlantType(_mac, type?.name);
+    await _repo.savePlantType(_mac, type?.name);
     state = type;
   }
 }
 
 final plantTypeProvider =
     StateNotifierProvider.family<PlantTypeNotifier, PlantType?, String>(
-  (ref, mac) => PlantTypeNotifier(ref.watch(plantLocalDatasourceProvider), mac),
+  (ref, mac) => PlantTypeNotifier(ref.watch(plantRepositoryProvider), mac),
 );
