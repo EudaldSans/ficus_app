@@ -4,7 +4,7 @@ class PlantReadingModel extends PlantReading {
   const PlantReadingModel({
     required super.timestamp,
     super.temperature,
-    super.humidity,
+    super.soilMoisture,
   });
 
   factory PlantReadingModel.fromFirebase(
@@ -15,7 +15,7 @@ class PlantReadingModel extends PlantReading {
     return PlantReadingModel(
       timestamp: DateTime.fromMillisecondsSinceEpoch(ts * 1000),
       temperature: (data['temperature'] as num?)?.toDouble(),
-      humidity: (data['humidity'] as num?)?.toDouble(),
+      soilMoisture: (data['sm'] as num?)?.toDouble(),
     );
   }
 }

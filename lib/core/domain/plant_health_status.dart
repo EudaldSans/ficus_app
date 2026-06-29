@@ -10,17 +10,17 @@ enum PlantHealthStatus {
 
   static List<PlantHealthStatus> compute({
     required PlantType? plantType,
-    required double? humidity,
+    required double? soilMoisture,
     required double? temperature,
   }) {
     if (plantType == null) return const [];
 
     final statuses = <PlantHealthStatus>[];
 
-    if (humidity != null && humidity > plantType.humidityOverwatered) {
+    if (soilMoisture != null && soilMoisture > plantType.soilMoistureOverwatered) {
       statuses.add(overwatered);
     }
-    if (humidity != null && humidity < plantType.humidityDry) {
+    if (soilMoisture != null && soilMoisture < plantType.soilMoistureDry) {
       statuses.add(needsWatering);
     }
     if (temperature != null && temperature > plantType.tempCriticalHigh) {

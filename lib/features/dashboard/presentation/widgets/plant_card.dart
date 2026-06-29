@@ -18,7 +18,7 @@ class PlantCard extends ConsumerWidget {
     final plantType = ref.watch(plantTypeProvider(plant.macAddress));
     final healthStatuses = PlantHealthStatus.compute(
       plantType: plantType,
-      humidity: plant.humidity,
+      soilMoisture: plant.soilMoisture,
       temperature: plant.temperature,
     );
 
@@ -62,9 +62,9 @@ class PlantCard extends ConsumerWidget {
               const SizedBox(height: 8),
               _ReadingRow(
                 icon: Icons.water_drop_outlined,
-                label: 'Humidity',
-                value: plant.humidity != null
-                    ? '${plant.humidity!.toStringAsFixed(1)} %'
+                label: 'Soil Moisture',
+                value: plant.soilMoisture != null
+                    ? '${plant.soilMoisture!.toStringAsFixed(1)} %'
                     : '—',
               ),
               if (plant.lastUpdated != null) ...[

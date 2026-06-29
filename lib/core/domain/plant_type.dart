@@ -20,16 +20,16 @@ enum PlantType {
       };
 
   // Soil moisture thresholds (%)
-  double get humidityDry => switch (this) {
+  double get soilMoistureDry => switch (this) {
         PlantType.ficusEnanus => 30.0,
       };
-  double get humidityOverwatered => switch (this) {
+  double get soilMoistureOverwatered => switch (this) {
         PlantType.ficusEnanus => 80.0,
       };
-  double get humidityIdealMin => switch (this) {
+  double get soilMoistureIdealMin => switch (this) {
         PlantType.ficusEnanus => 40.0,
       };
-  double get humidityIdealMax => switch (this) {
+  double get soilMoistureIdealMax => switch (this) {
         PlantType.ficusEnanus => 65.0,
       };
 

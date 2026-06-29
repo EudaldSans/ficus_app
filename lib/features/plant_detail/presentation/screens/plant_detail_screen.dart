@@ -210,8 +210,8 @@ class _PlantTypeSection extends ConsumerWidget {
             Text(
               'Ideal: ${selectedType.tempIdealMin.toStringAsFixed(0)}–'
               '${selectedType.tempIdealMax.toStringAsFixed(0)} °C  ·  '
-              '${selectedType.humidityIdealMin.toStringAsFixed(0)}–'
-              '${selectedType.humidityIdealMax.toStringAsFixed(0)} % humidity',
+              '${selectedType.soilMoistureIdealMin.toStringAsFixed(0)}–'
+              '${selectedType.soilMoistureIdealMax.toStringAsFixed(0)} % soil moisture',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.onSurface.withValues(alpha: 0.55),
                   ),
@@ -263,10 +263,10 @@ class _ReadingsContent extends StatelessWidget {
           ),
           const SizedBox(height: 24),
           _ChartSection(
-            title: 'Humidity',
+            title: 'Soil Moisture',
             unit: '%',
             readings: readings,
-            valueSelector: (r) => r.humidity,
+            valueSelector: (r) => r.soilMoisture,
             color: const Color(0xFF1565C0),
           ),
           const SizedBox(height: 16),
@@ -301,9 +301,9 @@ class _StatRow extends StatelessWidget {
         Expanded(
           child: _StatCard(
             icon: Icons.water_drop_outlined,
-            label: 'Current Humidity',
-            value: latest.humidity != null
-                ? '${latest.humidity!.toStringAsFixed(1)} %'
+            label: 'Current Soil Moisture',
+            value: latest.soilMoisture != null
+                ? '${latest.soilMoisture!.toStringAsFixed(1)} %'
                 : '—',
             color: const Color(0xFF1565C0),
           ),

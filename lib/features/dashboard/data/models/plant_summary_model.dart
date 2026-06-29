@@ -5,7 +5,7 @@ class PlantSummaryModel extends PlantSummary {
     required super.macAddress,
     super.name,
     super.temperature,
-    super.humidity,
+    super.soilMoisture,
     super.lastUpdated,
   });
 
@@ -34,8 +34,8 @@ class PlantSummaryModel extends PlantSummary {
     return PlantSummaryModel(
       macAddress: macAddress,
       name: name,
-      temperature: (reading['temperature'] as num?)?.toDouble(),
-      humidity: (reading['humidity'] as num?)?.toDouble(),
+      temperature: (reading['t'] as num?)?.toDouble(),
+      soilMoisture: (reading['sm'] as num?)?.toDouble(),
       lastUpdated: DateTime.fromMillisecondsSinceEpoch(latest.key * 1000),
     );
   }
