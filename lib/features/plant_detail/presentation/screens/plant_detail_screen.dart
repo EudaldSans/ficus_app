@@ -53,8 +53,13 @@ class PlantDetailScreen extends ConsumerWidget {
         actions: [
           IconButton(
             icon: const Icon(Icons.edit_outlined),
-            tooltip: 'Rename',
-            onPressed: () => _showRenameDialog(context, ref, plant?.name ?? ''),
+            tooltip: 'Edit',
+            onPressed: () => _showEditDialog(
+              context,
+              ref,
+              plant?.name ?? '',
+              ref.read(plantTypeProvider(macAddress)),
+            ),
           ),
           if (readingsAsync.isLoading)
             const Padding(
@@ -82,59 +87,102 @@ class PlantDetailScreen extends ConsumerWidget {
     );
   }
 
-  Future<void> _showRenameDialog(
+  Future<void> _showEditDialog(
     BuildContext context,
     WidgetRef ref,
     String currentName,
+    PlantType? currentType,
   ) async {
     final controller = TextEditingController(text: currentName);
+    PlantType? selectedType = currentType;
 
-    final result = await showDialog<String>(
+    final result = await showDialog<(String, PlantType?)>(
       context: context,
       builder: (ctx) => AlertDialog(
-        backgroundColor: AppColors.cream,
-        title: const Text(
-          'Rename plant',
-          style: TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.w700),
-        ),
-        content: TextField(
-          controller: controller,
-          autofocus: true,
-          maxLength: 32,
-          decoration: const InputDecoration(
-            hintText: 'e.g. Living Room',
-            counterText: '',
-            enabledBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.green),
+          backgroundColor: AppColors.cream,
+          title: const Text(
+            'Edit plant',
+            style: TextStyle(color: AppColors.greenDark, fontWeight: FontWeight.w700),
+          ),
+          content: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              TextField(
+                controller: controller,
+                autofocus: true,
+                maxLength: 32,
+                decoration: const InputDecoration(
+                  labelText: 'Name',
+                  hintText: 'e.g. Living Room',
+                  counterText: '',
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.green),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.greenDark, width: 2),
+                  ),
+                ),
+              ),
+              const SizedBox(height: 16),
+              DropdownButtonFormField<PlantType?>(
+                initialValue: selectedType,
+                decoration: const InputDecoration(
+                  labelText: 'Plant type',
+                  enabledBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.green),
+                  ),
+                  focusedBorder: UnderlineInputBorder(
+                    borderSide: BorderSide(color: AppColors.greenDark, width: 2),
+                  ),
+                ),
+                dropdownColor: AppColors.cream,
+                style: const TextStyle(color: AppColors.greenDark),
+                items: [
+                  const DropdownMenuItem<PlantType?>(
+                    value: null,
+                    child: Text(
+                      '— Not configured —',
+                      style: TextStyle(
+                          color: Color(0xFF888888), fontStyle: FontStyle.italic),
+                    ),
+                  ),
+                  ...PlantType.values.map(
+                    (t) => DropdownMenuItem<PlantType?>(
+                      value: t,
+                      child: Text(t.displayName),
+                    ),
+                  ),
+                ],
+                onChanged: (type) => selectedType = type,
+              ),
+            ],
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(ctx),
+              child: const Text('Cancel', style: TextStyle(color: AppColors.onSurface)),
             ),
-            focusedBorder: UnderlineInputBorder(
-              borderSide: BorderSide(color: AppColors.greenDark, width: 2),
+            TextButton(
+              onPressed: () =>
+                  Navigator.pop(ctx, (controller.text.trim(), selectedType)),
+              child: const Text(
+                'Save',
+                style: TextStyle(color: AppColors.green, fontWeight: FontWeight.w700),
+              ),
             ),
-          ),
-          onSubmitted: (v) => Navigator.pop(ctx, v.trim()),
+          ],
         ),
-        actions: [
-          TextButton(
-            onPressed: () => Navigator.pop(ctx),
-            child: const Text('Cancel', style: TextStyle(color: AppColors.onSurface)),
-          ),
-          TextButton(
-            onPressed: () => Navigator.pop(ctx, controller.text.trim()),
-            child: const Text('Save',
-                style: TextStyle(
-                    color: AppColors.green, fontWeight: FontWeight.w700)),
-          ),
-        ],
-      ),
     );
 
     if (result == null || !context.mounted) return;
-    await ref.read(plantRepositoryProvider).savePlantName(macAddress, result);
+    final (name, type) = result;
+    await ref.read(plantRepositoryProvider).savePlantName(macAddress, name);
+    await ref.read(plantTypeProvider(macAddress).notifier).setType(type);
     ref.invalidate(plantsProvider);
   }
 }
 
-// ── Plant type selector ───────────────────────────────────────────────────────
+// ── Plant type info (read-only) ───────────────────────────────────────────────
 
 class _PlantTypeSection extends ConsumerWidget {
   final String macAddress;
@@ -143,7 +191,7 @@ class _PlantTypeSection extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final selectedType = ref.watch(plantTypeProvider(macAddress));
+    final type = ref.watch(plantTypeProvider(macAddress));
 
     return Container(
       margin: const EdgeInsets.only(bottom: 24),
@@ -167,51 +215,32 @@ class _PlantTypeSection extends ConsumerWidget {
                       fontWeight: FontWeight.w700,
                     ),
               ),
+              const Spacer(),
+              if (type != null)
+                Text(
+                  type.displayName,
+                  style: Theme.of(context)
+                      .textTheme
+                      .bodyMedium
+                      ?.copyWith(color: AppColors.greenDark),
+                )
+              else
+                Text(
+                  'Not configured',
+                  style: Theme.of(context).textTheme.bodyMedium?.copyWith(
+                        color: AppColors.onSurface.withValues(alpha: 0.45),
+                        fontStyle: FontStyle.italic,
+                      ),
+                ),
             ],
           ),
-          const SizedBox(height: 8),
-          Container(
-            padding: const EdgeInsets.symmetric(horizontal: 12),
-            decoration: BoxDecoration(
-              color: AppColors.cream,
-              borderRadius: BorderRadius.circular(8),
-            ),
-            child: DropdownButton<PlantType?>(
-              value: selectedType,
-              isExpanded: true,
-              underline: const SizedBox.shrink(),
-              dropdownColor: AppColors.cream,
-              style: Theme.of(context)
-                  .textTheme
-                  .bodyMedium
-                  ?.copyWith(color: AppColors.greenDark),
-              items: [
-                const DropdownMenuItem<PlantType?>(
-                  value: null,
-                  child: Text(
-                    '— Not configured —',
-                    style: TextStyle(
-                        color: Color(0xFF888888), fontStyle: FontStyle.italic),
-                  ),
-                ),
-                ...PlantType.values.map(
-                  (t) => DropdownMenuItem<PlantType?>(
-                    value: t,
-                    child: Text(t.displayName),
-                  ),
-                ),
-              ],
-              onChanged: (type) =>
-                  ref.read(plantTypeProvider(macAddress).notifier).setType(type),
-            ),
-          ),
-          if (selectedType != null) ...[
-            const SizedBox(height: 10),
+          if (type != null) ...[
+            const SizedBox(height: 8),
             Text(
-              'Ideal: ${selectedType.tempIdealMin.toStringAsFixed(0)}–'
-              '${selectedType.tempIdealMax.toStringAsFixed(0)} °C  ·  '
-              '${selectedType.soilMoistureIdealMin.toStringAsFixed(0)}–'
-              '${selectedType.soilMoistureIdealMax.toStringAsFixed(0)} % soil moisture',
+              'Ideal: ${type.tempIdealMin.toStringAsFixed(0)}–'
+              '${type.tempIdealMax.toStringAsFixed(0)} °C  ·  '
+              '${type.soilMoistureIdealMin.toStringAsFixed(0)}–'
+              '${type.soilMoistureIdealMax.toStringAsFixed(0)} % soil moisture',
               style: Theme.of(context).textTheme.bodySmall?.copyWith(
                     color: AppColors.onSurface.withValues(alpha: 0.55),
                   ),
